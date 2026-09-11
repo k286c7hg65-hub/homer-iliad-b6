@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>伊利亚特 · 卷六 | 战场尽头的人间 · 翻页书</title>
+<style>
+/* 伊利亚特卷六 · 红绘陶瓶翻页书（2026-08-16）
+   书籍美学：黑底 + 陶土红 + 古希腊金；真实单页翻书引擎 */
+:root{
+  --paper:#1a1712;
+  --paper-light:#241f18;
+  --ink:#e8d9bd;
+  --ink-dim:#9a8a6c;
+  --terracotta:#c96f3a;
+  --gold:#c9a84c;
+  --book-bg:#0a0806;
+  --font-serif:'Noto Serif SC','Songti SC',Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--book-bg);
+  color:var(--ink);
+  font-family:var(--font-serif);
+  display:flex;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;
+}
+.book-stage{
+  position:relative;
+  width:min(94vw,960px);
+  height:min(88vh,700px);
+  perspective:2400px;
+}
+.book{
+  position:absolute;inset:0;
+  background:var(--paper);
+  border-radius:6px 14px 14px 6px;
+  box-shadow:0 30px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.4);
+  overflow:hidden;
+}
+.book-shadow{position:absolute;inset:0;border-radius:inherit;
+  box-shadow:inset 0 0 50px rgba(0,0,0,.35);pointer-events:none}
+
+/* 页面 */
+.page{
+  position:absolute;inset:0;
+  padding:clamp(20px,3.5vw,40px);
+  display:flex;flex-direction:column;
+  background:var(--paper);
+  overflow-y:auto;
+  opacity:0;visibility:hidden;
+}
+.page.on{opacity:1;visibility:visible}
+.page-underneath{opacity:1;visibility:visible;z-index:0}
+
+/* 翻页纸片（真实单页翻书） */
+.flip-sheet{
+  position:absolute;inset:0;z-index:5;
+  transform-style:preserve-3d;
+  transform-origin:left center;
+  transition:transform .85s cubic-bezier(.4,.08,.25,1);
+  pointer-events:none;
+}
+.flip-front,.flip-back{
+  position:absolute;inset:0;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  background:var(--paper);
+  overflow:hidden;
+}
+.flip-back{
+  transform:rotateY(180deg);
+  background:linear-gradient(135deg,#241f18 0%,#1a1712 100%);
+  box-shadow:inset 0 0 30px rgba(0,0,0,.4);
+}
+.flip-inner{
+  position:absolute;inset:0;
+  padding:clamp(20px,3.5vw,40px);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+
+/* 希腊回纹 */
+.meander{
+  height:10px;flex:0 0 auto;
+  background:
+    linear-gradient(135deg,var(--terracotta) 25%,transparent 25%) -8px 0/16px 16px,
+    linear-gradient(225deg,var(--terracotta) 25%,transparent 25%) -8px 0/16px 16px,
+    linear-gradient(45deg,var(--terracotta) 25%,transparent 25%) 0 0/16px 16px,
+    linear-gradient(315deg,var(--terracotta) 25%,transparent 25%) 0 0/16px 16px;
+  background-repeat:repeat-x;
+  opacity:.45;
+  margin-bottom:14px;
+}
+
+/* 封面 */
+.pg-cover{
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(201,111,58,.16), transparent 60%),
+    linear-gradient(160deg,#241a10 0%,#120d08 70%,#0a0806 100%);
+  color:var(--ink);
+  justify-content:center;align-items:center;text-align:center;
+}
+.cover-kicker{
+  font-size:11px;letter-spacing:.5em;color:var(--gold);
+  margin-bottom:22px;
+}
+.cover-title{
+  font-size:clamp(30px,5.5vw,48px);
+  letter-spacing:.12em;line-height:1.4;color:var(--cream,#f0e2c8);
+  margin-bottom:16px;
+  text-shadow:0 2px 14px rgba(0,0,0,.6);
+}
+.cover-divider{
+  width:64px;height:2px;background:var(--terracotta);
+  margin:0 auto 18px;
+}
+.cover-sub{
+  font-size:clamp(12px,1.8vw,15px);
+  letter-spacing:.4em;color:var(--ink-dim);
+  margin-bottom:34px;
+}
+.cover-quote{
+  max-width:80%;
+  font-size:clamp(14px,2.2vw,17px);
+  color:var(--terracotta);
+  font-style:italic;
+  padding:16px 22px;
+  border:1px solid rgba(201,168,76,.3);
+  border-radius:4px;
+}
+.cover-quote .attr{
+  display:block;margin-top:10px;
+  font-size:11px;color:var(--ink-dim);
+  font-style:normal;letter-spacing:.25em;
+}
+.cover-hint{
+  position:absolute;bottom:34px;
+  font-size:11px;color:rgba(154,138,108,.6);
+  letter-spacing:.3em;
+}
+
+/* 内容页 */
+.page-kicker{
+  font-size:11px;letter-spacing:.35em;color:var(--gold);
+  margin-bottom:8px;flex:0 0 auto;
+}
+.page-act{
+  font-size:clamp(17px,2.6vw,22px);
+  color:var(--cream,#f0e2c8);
+  letter-spacing:.15em;
+  margin-bottom:14px;flex:0 0 auto;
+}
+.page-img{
+  flex:0 0 auto;   /* 固定，不被文字挤压 */
+  height:62%;      /* 每页一致，图更大 */
+  background:#0d0b08;
+  border:1px solid rgba(201,168,76,.28);
+  border-radius:8px;
+  overflow:hidden;
+  box-shadow:0 10px 34px rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.page-img::after{  /* 金色内衬：黑边变为画框 */
+  content:'';position:absolute;inset:6px;
+  border:1px solid rgba(201,168,76,.2);
+  border-radius:4px;pointer-events:none;
+}
+.page-img img{
+  max-width:calc(100% - 28px);
+  max-height:calc(100% - 28px);
+  object-fit:contain;
+  display:block;
+}
+/* 文字区 */
+.page-texts{
+  flex:1 1 auto;
+  min-height:0;
+  margin-top:12px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.narr{
+  font-size:clamp(12px,1.7vw,14px);
+  color:var(--ink);
+  line-height:1.75;
+  border-left:3px solid var(--terracotta);
+  padding:6px 0 6px 12px;
+  margin-bottom:8px;
+}
+.speech{
+  background:var(--paper-light);
+  border:1px solid rgba(201,168,76,.2);
+  border-radius:6px;
+  padding:10px 14px;
+  margin-top:8px;
+  position:relative;
+}
+.speech .who{
+  display:block;font-size:11px;
+  color:var(--gold);letter-spacing:.25em;
+  margin-bottom:4px;
+}
+.speech .line{
+  font-size:clamp(13px,1.9vw,15.5px);
+  color:var(--cream,#f0e2c8);
+  line-height:1.85;
+}
+.speech .line-en{
+  display:block;margin-top:4px;
+  font-size:11px;color:var(--ink-dim);
+  font-style:italic;
+}
+
+/* 尾页 */
+.pg-end{
+  justify-content:center;
+}
+.end-kicker{
+  font-size:11px;letter-spacing:.4em;color:var(--gold);
+  margin-bottom:18px;
+}
+.end-title{
+  font-size:clamp(22px,3.6vw,32px);
+  color:var(--cream,#f0e2c8);
+  letter-spacing:.1em;margin-bottom:20px;
+}
+.end-num{
+  font-size:clamp(38px,7vw,60px);
+  color:var(--terracotta);font-weight:700;
+  line-height:1;
+}
+.end-num-label{
+  font-size:11px;color:var(--ink-dim);
+  letter-spacing:.25em;margin:4px 0 20px;
+}
+.end-body{
+  font-size:clamp(13px,1.9vw,15.5px);
+  color:var(--ink);line-height:1.9;
+  max-width:90%;
+}
+.end-quote{
+  margin-top:18px;
+  padding:12px 16px;
+  border-left:3px solid var(--terracotta);
+  font-style:italic;
+  color:var(--terracotta);
+  font-size:clamp(13px,1.9vw,15px);
+  max-width:90%;
+}
+
+/* 导航 */
+.nav-btn{
+  position:fixed;top:50%;transform:translateY(-50%);
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.75);
+  font-size:20px;cursor:pointer;z-index:10;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .3s;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-btn:hover{background:rgba(255,255,255,.12)}
+.nav-btn:active{transform:translateY(-50%) scale(.92)}
+#navLeft{left:14px}
+#navRight{right:14px}
+
+/* 进度 */
+.indicator{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;z-index:10;
+}
+.indicator span{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.22);
+  transition:all .4s;
+}
+.indicator span.on{background:var(--gold);transform:scale(1.3)}
+
+@media (max-width:640px){
+  .book-stage{width:97vw;height:80vh}
+  .nav-btn{width:42px;height:42px;font-size:16px}
+  .page{padding:16px 14px}
+  .page-texts{max-height:42%}
+}
+</style>
+</head>
+<body>
+<div class="book-stage">
+  <div class="book" id="book">
+    <div class="book-shadow"></div>
+    <div id="pages"></div>
+  </div>
+</div>
+<button class="nav-btn" id="navLeft" aria-label="上一页">‹</button>
+<button class="nav-btn" id="navRight" aria-label="下一页">›</button>
+<div class="indicator" id="indicator"></div>
+<script>
+/* 卷6 翻页书内容：封面 + 6 幕 + 卷末注 */
+const PAGES = [
+  {
+    type:'cover',
+    kicker:'ILIAD · BOOK VI',
+    title:'战场尽头<br/>的人间',
+    sub:'赫克托尔 · 安德洛玛刻 · 诀别',
+    quote:'"凡人如树叶，年年飘落，来年又生。"',
+    attr:'格劳科斯 · 伊利亚特卷六'
+  },
+  {
+    act:'第 一 幕 · 不 留 活 口',
+    img:'b6/b06_g01.jpg',
+    alt:'阿伽门农刺死求饶的俘虏',
+    narr:'战场陷入屠杀。特洛伊人阿德拉斯托斯抱住墨涅拉俄斯双膝求饶，墨涅拉俄斯心软了。阿伽门农赶来。',
+    speeches:[
+      {who:'阿伽门农', line:'"一个也别留活口，连母腹中的胎儿也不放过。让他们一个都活不成！"',
+       en:'"Let us not spare a single one of them, not even the child unborn."'}
+    ]
+  },
+  {
+    act:'第 二 幕 · 回 城',
+    img:'b6/b06_g02.jpg',
+    alt:'赫克托尔穿过战场回城',
+    narr:'预言家海勒诺斯说，特洛伊人怕狄俄墨得斯，甚于怕阿喀琉斯。赫克托尔奉命回城，命母亲献祭雅典娜。',
+    speeches:[
+      {who:'海勒诺斯', line:'"我们不怕他们的英雄阿喀琉斯，却怕这个狄俄墨得斯，怕他压过我们整座城池。"',
+       en:'"We did not fear even their great champion Achilles as we do this man."'}
+    ]
+  },
+  {
+    act:'第 三 幕 · 金 换 铜',
+    img:'b6/b06_g03.jpg',
+    alt:'格劳科斯与狄俄墨得斯换甲',
+    narr:'两军阵前，格劳科斯与狄俄墨得斯互问出身，发现祖辈有宾主之谊，遂交换铠甲，结为世交。',
+    speeches:[
+      {who:'格劳科斯', line:'"人如落叶，年年随风飘落，来年新叶又生。世代如此。"',
+       en:'"Men come and go as leaves year by year upon the trees."'},
+      {who:'叙述者', line:'宙斯迷了格劳科斯的心智：金甲换铜甲，值百头牛，换值九头牛。', en:''}
+    ]
+  },
+  {
+    act:'第 四 幕 · 未 应 允 的 祈 祷',
+    img:'b6/b06_g04.jpg',
+    alt:'赫卡柏献祭雅典娜',
+    narr:'赫卡柏率众贵妇献上锦袍，向雅典娜祈愿：折断狄俄墨得斯的长矛。',
+    speeches:[
+      {who:'叙述者', line:'帕拉斯·雅典娜，没有应允她们的祈祷。',
+       en:'"Pallas Minerva granted not her prayer."'}
+    ]
+  },
+  {
+    act:'第 五 幕 · 海 伦 之 恨',
+    img:'b6/b06_g05.jpg',
+    alt:'赫克托尔斥责帕里斯，海伦自恨',
+    narr:'赫克托尔在弟弟家中找到他擦拭弓甲，厉声斥责。海伦立在旁侧，低头自恨。',
+    speeches:[
+      {who:'海伦', line:'"但愿旋风在我出生那天就把我卷走，吹到山间，吹进浪里。"',
+       en:'"Would that a whirlwind had caught me up on the day my mother brought me forth."'}
+    ]
+  },
+  {
+    act:'第 六 幕 · 诀 别',
+    img:'b6/b06_g06.jpg',
+    alt:'赫克托尔与安德洛玛刻诀别',
+    narr:'城墙上，安德洛玛刻迎面而来。她的父亲、七个兄弟，都死在阿喀琉斯手里。',
+    speeches:[
+      {who:'安德洛玛刻', line:'"你对我就是父亲，是母亲，是兄弟，是亲爱的丈夫。可怜可怜我吧，留在城墙上，别让你的儿子成为孤儿，别让你的妻子成为寡妇。"',
+       en:'"You who to me are father, mother, brother, and dear husband, have mercy upon me."'},
+      {who:'赫克托尔', line:'"我若怯战躲藏，有何面目面对特洛伊人。我早已知道，圣城伊利昂终会毁灭。但战争是男人的事，我心中最痛的，是你被掳为奴的那一天。"',
+       en:'"War is man\'s matter."'},
+      {who:'叙述者', line:'婴儿被父亲盔缨的鬃毛吓哭。赫克托尔摘下头盔，举子向宙斯祈祷：愿他像我一样强大，让母亲的心欢喜。安德洛玛刻含着泪，微笑。',
+       en:'"She was wife to Hector, the bravest warrior among the Trojans."'}
+    ]
+  },
+  {
+    type:'end',
+    kicker:'卷 末 注',
+    title:'为活着的赫克托尔举哀',
+    num:'24', numLabel:'全诗 24 卷 · 本卷第 6',
+    body:'这是整部《伊利亚特》最温柔的章节。战神的头盔吓哭亲儿子，父亲摘下头盔，向宙斯祈祷儿子将来胜过自己。荣誉的代价，第一次以家庭为单位被清算。此后赫克托尔再未回到这座城。三千年前写下的句子，今天读来依然会疼。',
+    quote:'"他们都在自己家中为赫克托尔举哀，虽然他还活着。"'
+  }
+];
+
+let cur = 0, flip = false;
+const N = PAGES.length;
+const book = document.getElementById('book');
+const ind = document.getElementById('indicator');
+
+function rC(){
+  document.querySelectorAll('.page').forEach((p,i)=>p.classList.toggle('on', i===cur));
+  document.querySelectorAll('.indicator span').forEach((s,i)=>s.classList.toggle('on', i===cur));
+}
+function hA(){document.querySelectorAll('.page').forEach(p=>{p.style.opacity=0;});}
+function sP(i,z){
+  const p=document.getElementById('page-'+i);
+  if(!p)return;
+  p.style.opacity=1;p.style.zIndex=z;p.classList.add('page-underneath');
+}
+function doFlip(dst,dir){
+  if(flip||dst<0||dst>=N)return;
+  flip=true;
+  const src = dir>0 ? cur : dst;
+  const sheet=document.createElement('div');
+  sheet.className='flip-sheet';
+  const front=document.createElement('div');
+  front.className='flip-front';
+  front.innerHTML='<div class="flip-inner">'+PAGES[src]._html+'</div>';
+  const back=document.createElement('div');
+  back.className='flip-back';
+  sheet.appendChild(front); sheet.appendChild(back);
+  hA(); sP(dst,0);
+  book.appendChild(sheet);
+  sheet.style.transition='none';
+  sheet.style.transform = dir>0 ? 'rotateY(0deg)' : 'rotateY(-180deg)';
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      sheet.style.transition='transform .85s cubic-bezier(.4,.08,.25,1)';
+      sheet.style.transform = dir>0 ? 'rotateY(-180deg)' : 'rotateY(0deg)';
+    });
+  });
+  const done=()=>{sheet.remove();flip=false;cur=dst;rC();};
+  sheet.addEventListener('transitionend',function h(){sheet.removeEventListener('transitionend',h);done();});
+  setTimeout(done,1000);
+}
+function next(){doFlip(cur+1,1)}
+function prev(){doFlip(cur-1,-1)}
+
+/* 渲染页面 */
+PAGES.forEach((pg,i)=>{
+  const el=document.createElement('div');
+  el.className='page'+(pg.type==='cover'?' pg-cover':(pg.type==='end'?' pg-end':''));
+  el.id='page-'+i;
+  let html='';
+  if(pg.type==='cover'){
+    html+='<div class="cover-kicker">'+pg.kicker+'</div>';
+    html+='<div class="cover-title">'+pg.title+'</div>';
+    html+='<div class="cover-divider"></div>';
+    html+='<div class="cover-sub">'+pg.sub+'</div>';
+    html+='<div class="cover-quote">'+pg.quote+'<span class="attr">'+pg.attr+'</span></div>';
+    html+='<div class="cover-hint">点 击 或 滑 动 翻 页</div>';
+  }else if(pg.type==='end'){
+    html+='<div class="meander"></div>';
+    html+='<div class="end-kicker">'+pg.kicker+'</div>';
+    html+='<div class="end-title">'+pg.title+'</div>';
+    html+='<div class="end-num">'+pg.num+'</div>';
+    html+='<div class="end-num-label">'+pg.numLabel+'</div>';
+    html+='<div class="end-body">'+pg.body+'</div>';
+    html+='<div class="end-quote">'+pg.quote+'</div>';
+  }else{
+    html+='<div class="meander"></div>';
+    html+='<div class="page-kicker">ILIAD · BOOK VI</div>';
+    html+='<div class="page-act">'+pg.act+'</div>';
+    html+='<div class="page-img"><img src="'+pg.img+'" alt="'+pg.alt+'" loading="lazy"/></div>';
+    html+='<div class="page-texts"><div class="narr">'+pg.narr+'</div>';
+    pg.speeches.forEach(s=>{
+      html+='<div class="speech"><span class="who">'+s.who+'</span><span class="line">'+s.line+'</span>';
+      if(s.en)html+='<span class="line-en">'+s.en+'</span>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+  el.innerHTML=html;
+  pg._html=html;
+  document.getElementById('pages').appendChild(el);
+  const dot=document.createElement('span');
+  ind.appendChild(dot);
+});
+rC();
+
+document.getElementById('navRight').addEventListener('click',next);
+document.getElementById('navLeft').addEventListener('click',prev);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();next()}
+  if(e.key==='ArrowLeft'){e.preventDefault();prev()}
+});
+let tx=0,ty=0,sw=false;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;sw=true},{passive:true});
+document.addEventListener('touchmove',e=>{
+  // 只拦截水平滑动（翻页手势），垂直滚动（页面内文字）放行
+  if(sw && Math.abs(e.touches[0].clientX-tx) > Math.abs(e.touches[0].clientY-ty)) e.preventDefault();
+},{passive:false});
+document.addEventListener('touchend',e=>{
+  if(!sw)return;sw=false;
+  const dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>50){dx<0?next():prev()}
+},{passive:true});
+</script>
+</body>
+</html>
